@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace Server
+namespace DirList
 {
-    class DirList
+    public class DirList
     {
         public List<DirListNode> Nodes { get; set; }
 
@@ -16,7 +16,17 @@ namespace Server
             if (Directory.Exists(path))
             {
                 DirectoryInfo rootDir = new(path);
-                SubNodes(rootDir, rootDir.Name);
+
+                foreach (DirectoryInfo subDir in rootDir.GetDirectories())
+                    SubNodes(subDir, subDir.Name);
+
+                foreach (FileInfo subFile in rootDir.GetFiles())
+                {
+                    DirListNode toAdd = new() { Name = subFile.Name, RelativeName = subFile.Name, FullName = subFile.FullName, IsFile = true };
+                    toAdd.Hash = GetMD5(toAdd.FullName);
+
+                    Nodes.Add(toAdd);
+                }
             }
             else
             {
@@ -33,7 +43,7 @@ namespace Server
 
             foreach (FileInfo subFile in currentDir.GetFiles())
             {
-                DirListNode toAdd = new() { Name = subFile.Name, RelativeName = currentDirLocation + '\\' + subFile.Name, FullName = subFile.FullName, IsFile = true };
+                DirListNode toAdd = new() { Name = subFile.Name, RelativeName = currentDirLocation + '\\' + subFile.Name, FullName = subFile.FullName, Size = subFile.Length, IsFile = true };
                 toAdd.Hash = GetMD5(toAdd.FullName);
 
                 Nodes.Add(toAdd);
@@ -54,7 +64,7 @@ namespace Server
         {
             foreach (DirListNode node in Nodes)
             {
-                Console.WriteLine($"{node.RelativeName}, {{{node.Hash}}}");
+                Console.WriteLine($"{node.RelativeName}, {{{node.Hash}, {node.Size}}}");
             }
         }
 
@@ -64,24 +74,26 @@ namespace Server
 
             foreach (DirListNode node in Nodes)
             {
-                toReturn.Add(new NodeToSend() { Name = node.RelativeName, Hash = node.Hash });
+                toReturn.Add(new NodeToSend() { Name = node.RelativeName, Hash = node.Hash, Size = node.Size });
             }
 
             return toReturn;
         }
     }
-    class DirListNode
+    public class DirListNode
     {
         public bool IsFile { get; set; }
         public string Hash { get; set; }
         public string Name { get; set; }
         public string RelativeName { get; set; }
         public string FullName { get; set; }
+        public long Size { get; set; }
     }
 
-    class NodeToSend
+    public class NodeToSend
     {
         public string Name { get; set; }
         public string Hash { get; set; }
+        public long Size { get; set; }
     }
 }
