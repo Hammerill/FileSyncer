@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 
 namespace Client
 {
@@ -10,7 +12,12 @@ namespace Client
 
             string accepted = Networker.Networker.AcceptText();
 
-            Console.WriteLine(accepted);
+            var acceptedDeserialized = JsonConvert.DeserializeObject<List<DirList.DirListNode>>(accepted);
+
+            foreach (var node in acceptedDeserialized)
+            {
+                Console.WriteLine($"{node.Name}, {{{node.Hash}, {node.Size}}}");
+            }
         }
     }
 }
